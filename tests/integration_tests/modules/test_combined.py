@@ -26,7 +26,7 @@ from tests.integration_tests.integration_settings import (
     OS_IMAGE_TYPE,
     PLATFORM,
 )
-from tests.integration_tests.releases import CURRENT_RELEASE, IS_UBUNTU
+from tests.integration_tests.releases import CURRENT_RELEASE, IS_UBUNTU, NOBLE
 from tests.integration_tests.util import (
     get_feature_flag_value,
     get_inactive_modules,
@@ -264,9 +264,13 @@ class TestCombined:
             # Some minimal images may not have an installed rsyslog package
             # Test user-data doesn't provide install_rsyslog: true so expect
             # warnings when not installed.
+            if CURRENT_RELEASE < NOBLE:
+                operation_name = "reload-or-try-restart"
+            else:
+                operation_name = "try-reload-or-restart"
             require_warnings.append(
-                "Failed to try-reload-or-restart rsyslog.service:"
-                " Unit rsyslog.service not found."
+                f"Failed to {operation_name} rsyslog.service: Unit"
+                " rsyslog.service not found."
             )
         # Set ignore_deprecations=True as test_deprecated_message covers this
         verify_clean_boot(
@@ -322,12 +326,13 @@ class TestCombined:
 
     def test_cloud_id_file_symlink(self, class_client: IntegrationInstance):
         cloud_id = class_client.execute("cloud-id").stdout
-        expected_link_output = (
-            "'/run/cloud-init/cloud-id' -> "
-            f"'/run/cloud-init/cloud-id-{cloud_id}'"
+        expected_link_regex = (
+            r"['\"]/run/cloud-init/cloud-id['\"] -> "
+            f"['\"]/run/cloud-init/cloud-id-{cloud_id}['\"]"
         )
-        assert expected_link_output == str(
-            class_client.execute("stat -c %N /run/cloud-init/cloud-id")
+        assert re.match(
+            expected_link_regex,
+            class_client.execute("stat -c %N /run/cloud-init/cloud-id"),
         )
 
     def test_run_frequency(self, class_client: IntegrationInstance):

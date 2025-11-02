@@ -20,7 +20,7 @@ from tests.integration_tests.instances import IntegrationInstance
 LOG = logging.getLogger()
 
 
-class _Reaper:
+class Reaper:
     def __init__(self, timeout: float = 30.0):
         # self.timeout sets the amount of time to sleep before retrying
         self.timeout = timeout
@@ -41,7 +41,7 @@ class _Reaper:
         self.exit_reaper: Final[threading.Event] = threading.Event()
 
         # List of instances which temporarily escaped death
-        # The primary porpose of the reaper is to coax these instance towards
+        # The primary purpose of the reaper is to coax these instance towards
         # eventual demise and report their insubordination on shutdown.
         self.undead_ledger: Final[List[IntegrationInstance]] = []
 

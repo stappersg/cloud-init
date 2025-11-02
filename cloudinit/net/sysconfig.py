@@ -1056,7 +1056,7 @@ class Renderer(renderer.Renderer):
         cls._render_bridge_interfaces(network_state, iface_contents, flavor)
         cls._render_ib_interfaces(network_state, iface_contents, flavor)
         contents = {}
-        for iface_name, iface_cfg in iface_contents.items():
+        for _, iface_cfg in iface_contents.items():
             if iface_cfg or iface_cfg.children:
                 contents[iface_cfg.path] = iface_cfg.to_string()
                 for iface_cfg in iface_cfg.children:
@@ -1121,7 +1121,7 @@ class Renderer(renderer.Renderer):
                 netcfg.append("IPV6_AUTOCONF=no")
 
             # if sysconfig file exists and is not empty, append rest of the
-            # file content, do not remove the exsisting customizations.
+            # file content, do not remove the existing customizations.
             if os.path.exists(sysconfig_path):
                 for line in util.load_text_file(sysconfig_path).splitlines():
                     if (

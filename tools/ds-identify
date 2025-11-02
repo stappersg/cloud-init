@@ -101,7 +101,7 @@ DI_MAIN=${DI_MAIN:-main}
 DI_BLKID_EXPORT_OUT=""
 DI_GEOM_LABEL_STATUS_OUT=""
 DI_DEFAULT_POLICY="search,found=all,maybe=none,notfound=${DI_DISABLED}"
-DI_DEFAULT_POLICY_NO_DMI="search,found=all,maybe=none,notfound=${DI_ENABLED}"
+DI_DEFAULT_POLICY_NO_DMI="search,found=all,maybe=none,notfound=${DI_DISABLED}"
 DI_DMI_BOARD_NAME=""
 DI_DMI_CHASSIS_ASSET_TAG=""
 DI_DMI_PRODUCT_NAME=""
@@ -1769,7 +1769,7 @@ dscheck_WSL() {
         return "${DS_NOT_FOUND}"
     fi
 
-    # We know we are under WSL and have acess to the host filesystem,
+    # We know we are under WSL and have access to the host filesystem,
     # so let's find the user's home directory
     WSL_profile_dir "$mountpoints"
     profile_dir="${_RET}"

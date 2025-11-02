@@ -29,7 +29,7 @@ def setup_and_mount_lxd_disk(instance: LXDInstance):
 
 @pytest.fixture
 def create_disk():
-    subp("dd if=/dev/zero of={} bs=64k count=40".format(DISK_PATH).split())
+    subp("dd if=/dev/zero of={} bs=64k count=100".format(DISK_PATH).split())
     yield
     os.remove(DISK_PATH)
 
@@ -267,6 +267,6 @@ def test_required_mounts(create_disk, client: IntegrationInstance):
     deps = client.execute(
         f"systemctl list-dependencies --all {service}".split()
     )
-    assert "var.mount" in deps, "Exepected 'var.mount' to be a dependency"
+    assert "var.mount" in deps, "Expected 'var.mount' to be a dependency"
 
     verify_clean_boot(client)

@@ -14,7 +14,12 @@ from tests.integration_tests.integration_settings import (
     KEEP_INSTANCE,
     PLATFORM,
 )
-from tests.integration_tests.releases import CURRENT_RELEASE, IS_UBUNTU, MANTIC
+from tests.integration_tests.releases import (
+    CURRENT_RELEASE,
+    IS_UBUNTU,
+    MANTIC,
+    QUESTING,
+)
 from tests.integration_tests.util import (
     get_feature_flag_value,
     verify_clean_boot,
@@ -544,6 +549,10 @@ def _do_oci_customization(cloud_config: str):
 
 
 @pytest.mark.skipif(not IS_UBUNTU, reason="Apt usage")
+@pytest.mark.skipif(
+    CURRENT_RELEASE == QUESTING,
+    reason="Trying to remove gpg on Questing makes apt unhappy",
+)
 def test_install_missing_deps(session_cloud: IntegrationCloud):
     """
     Test the installation of missing dependencies using apt on an Ubuntu
@@ -615,7 +624,7 @@ def test_install_missing_deps(session_cloud: IntegrationCloud):
         # specify a ppa in our user data, and `apt update` can fail if no ppa
         # has been uploaded for the release being tested. This isn't uncommon
         # for the devel release and newer releases in general.
-        # Ignoring apt update errors seems preferrable to playing whack-a-mole
+        # Ignoring apt update errors seems preferable to playing whack-a-mole
         # with ppas that may or may not be available.
         verify_clean_boot(
             minimal_client,

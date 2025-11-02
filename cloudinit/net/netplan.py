@@ -4,6 +4,7 @@ import copy
 import io
 import logging
 import os
+import re
 import textwrap
 from tempfile import SpooledTemporaryFile
 from typing import Callable, List, Optional
@@ -242,7 +243,9 @@ def _clean_default(target=None):
         os.unlink(f)
 
 
-def netplan_api_write_yaml_file(net_config_content: str) -> bool:
+def netplan_api_write_yaml_file(
+    net_config_content: str, target: Optional[str] = None
+) -> bool:
     """Use netplan.State._write_yaml_file to write netplan config
 
     Where netplan python API exists, prefer to use of the private
@@ -265,6 +268,7 @@ def netplan_api_write_yaml_file(net_config_content: str) -> bool:
             CLOUDINIT_NETPLAN_FILE,
         )
         return False
+    net_config_content = _maybe_strip_invalid_mtu(net_config_content)
     try:
         with SpooledTemporaryFile(mode="w") as f:
             f.write(net_config_content)
@@ -279,9 +283,11 @@ def netplan_api_write_yaml_file(net_config_content: str) -> bool:
             # determine default root-dir /etc/netplan and/or specialized
             # filenames or read permissions based on whether this config
             # contains secrets.
-            state_output_file._write_yaml_file(
-                os.path.basename(CLOUDINIT_NETPLAN_FILE)
-            )
+            if not target:
+                file = os.path.basename(CLOUDINIT_NETPLAN_FILE)
+            else:
+                file = target
+            state_output_file._write_yaml_file(file)
     except Exception as e:
         LOG.warning(
             "Unable to render network config using netplan python module."
@@ -292,6 +298,29 @@ def netplan_api_write_yaml_file(net_config_content: str) -> bool:
         return False
     LOG.debug("Rendered netplan config using netplan python API")
     return True
+
+
+def _maybe_strip_invalid_mtu(net_config_content: str):
+    """Strip invalid MTU from the netplan config.
+
+    This is a fix for https://github.com/canonical/cloud-init/issues/6239
+    A 0 MTU value is NOT valid, but cloud-init accepted it prior to 24.2,
+    so rejecting it after c465de8 is a breaking change for existing releases.
+    """
+    if features.STRIP_INVALID_MTU:
+        # Using regex here is admittedly not great, but this is post-processing
+        # of the netplan config, and we'd have to be dealing with some very
+        # gnarly yaml to get a multiline mtu: 0 entry. The alternative is
+        # another round trip of yaml parsing, which is more expensive. Unless
+        # there's a demonstrated need for proper yaml parsing, the added
+        # complexity does not seem worth it.
+        net_config_content = re.sub(
+            r"^\s*mtu:\s*0\s*\n",
+            "",
+            net_config_content,
+            flags=re.MULTILINE,
+        )
+    return net_config_content
 
 
 def has_netplan_config_changed(cfg_file: str, content: str) -> bool:
@@ -366,8 +395,14 @@ class Renderer(renderer.Renderer):
             header += "\n"
         content = header + content
 
+        # Customize target only if explicitly passed in
+        if target is None:
+            target_ = target
+        else:
+            target_ = fpnplan
+
         netplan_config_changed = has_netplan_config_changed(fpnplan, content)
-        if not netplan_api_write_yaml_file(content):
+        if not netplan_api_write_yaml_file(content, target=target_):
             fallback_write_netplan_yaml(fpnplan, content)
 
         if self.clean_default:
@@ -406,6 +441,7 @@ class Renderer(renderer.Renderer):
         # net_setup_link on a device that no longer exists. When this happens,
         # we don't know what the device was renamed to, so re-gather the
         # entire list of devices and try again.
+        last_exception: Optional[Exception]
         for _ in range(5):
             try:
                 for iface in get_devicelist():
@@ -413,10 +449,11 @@ class Renderer(renderer.Renderer):
                         subp.subp(
                             setup_lnk + [SYS_CLASS_NET + iface], capture=True
                         )
+                last_exception = None
                 break
             except subp.ProcessExecutionError as e:
                 last_exception = e
-        else:
+        if last_exception:
             raise RuntimeError(
                 "'udevadm test-builtin net_setup_link' unable to run "
                 "successfully for all devices."
@@ -456,6 +493,8 @@ class Renderer(renderer.Renderer):
                     "set-name": ifname,
                     "match": ifcfg.get("match", None),
                 }
+                if "keep_configuration" in ifcfg:
+                    eth["critical"] = ifcfg["keep_configuration"]
                 if eth["match"] is None:
                     macaddr = ifcfg.get("mac_address", None)
                     if macaddr is not None:
@@ -500,8 +539,9 @@ class Renderer(renderer.Renderer):
                 bridge_ports = ifcfg.get("bridge_ports")
                 if bridge_ports is None:
                     LOG.warning(
-                        "Invalid config. The key",
-                        f"'bridge_ports' is required in {config}.",
+                        "Invalid config. The key"
+                        "'bridge_ports' is required in %s.",
+                        config,
                     )
                     continue
                 ports = sorted(copy.copy(bridge_ports))
@@ -582,10 +622,10 @@ class Renderer(renderer.Renderer):
         return "".join(content)
 
 
-def available(target=None):
+def available():
     expected = ["netplan"]
     search = ["/usr/sbin", "/sbin"]
     for p in expected:
-        if not subp.which(p, search=search, target=target):
+        if not subp.which(p, search=search):
             return False
     return True

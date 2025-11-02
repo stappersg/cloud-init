@@ -157,9 +157,8 @@ Explanation
 -----------
 
 An include file contains a list of URLs, one per line. Each of the URLs will
-be read and their content can be any kind of user-data format, both base
-config and meta config. If an error occurs reading a file the remaining files
-will not be read.
+be read and their content can be any kind of user-data format. If an error
+occurs reading a file the remaining files will not be read.
 
 .. _user_data_formats-jinja:
 
@@ -305,7 +304,7 @@ Explanation
 -----------
 
 A cloud-config-archive is a way to specify more than one type of data
-using YAML. Since building a MIME multipart archive can be somewhat unwieldly
+using YAML. Since building a MIME multipart archive can be somewhat unwieldy
 to build by hand or requires using a cloud-init helper utility, the
 cloud-config-archive provides a simpler alternative to building the MIME
 multi-part archive for those that would prefer to use YAML.
@@ -388,7 +387,7 @@ as binary data and so may be processed automatically.
 +--------------------+-----------------------------+-------------------------+
 |Cloud config archive|#cloud-config-archive        |text/cloud-config-archive|
 +--------------------+-----------------------------+-------------------------+
-|Jinja template      |## template: jinja           |text/jinja               |
+|Jinja template      |## template: jinja           |text/jinja2              |
 +--------------------+-----------------------------+-------------------------+
 |Include file        |#include                     |text/x-include-url       |
 +--------------------+-----------------------------+-------------------------+

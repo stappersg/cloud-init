@@ -32,7 +32,7 @@ Example output:
       --version, -v         Show program's version number and exit.
       --debug, -d           Show additional pre-action logging (default: False).
       --force               Force running even if no datasource is found (use at your own risk).
-      --all-stages          Run cloud-init's stages under a single process using a syncronization protocol. This is not intended for CLI usage.
+      --all-stages          Run cloud-init's stages under a single process using a synchronization protocol. This is not intended for CLI usage.
 
     Subcommands:
       {init,modules,single,query,features,analyze,devel,collect-logs,clean,status,schema}
@@ -86,11 +86,15 @@ re-run all stages as it did on first boot.
   remove the file. Best practice when cloning a golden image, to ensure the
   next boot of that image auto-generates a unique machine ID.
   `More details on machine-id`_.
-* :command:`--configs [all | ssh_config | network | datasource ]`: Optionally
-  remove all ``cloud-init`` generated config files. Argument `ssh_config`
-  cleans config files for ssh daemon. Argument `network` removes all generated
-  config files for network. Argument `datasource` removes files and/or configs
-  written by current datasource. `all` removes config files of all types.
+* :command:`--configs [all | ssh_config | network | datasource | fstab ]`:
+  Optionally remove all ``cloud-init`` generated config files. Argument
+  `ssh_config` cleans config files for ssh daemon. Argument `network` removes
+  all generated config files for network. Argument `datasource` removes files
+  and/or configs written by current datasource. It includes `fstab` entries
+  that have been only configured by this datasource leaving aside other entries
+  configured by cloud-init. Argument `fstab` removes all entries that have
+  been configured by cloud-init including those that are configured by various
+  datasources. `all` removes config files of all types.
 * :command:`--seed`: Remove the cloud-init seed directory
   (e.g., :file:`/var/lib/cloud/seed/`)
   which stores instance metadata used initializing a datasource.

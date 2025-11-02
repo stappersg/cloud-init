@@ -49,9 +49,6 @@ class DataSourceAliYun(sources.DataSource):
         self.default_update_events = copy.deepcopy(self.default_update_events)
         self.default_update_events[EventScope.NETWORK].add(EventType.BOOT)
 
-    def _unpickle(self, ci_pkl_version: int) -> None:
-        super()._unpickle(ci_pkl_version)
-
     def get_hostname(self, fqdn=False, resolve_ip=False, metadata_only=False):
         hostname = self.metadata.get("hostname")
         is_default = False
@@ -150,7 +147,7 @@ class DataSourceAliYun(sources.DataSource):
                 connect_synchronously=False,
             )
         except uhelp.UrlError:
-            # We use the raised exception to interupt the retry loop.
+            # We use the raised exception to interrupt the retry loop.
             # Nothing else to do here.
             pass
 
@@ -219,7 +216,7 @@ class DataSourceAliYun(sources.DataSource):
             except Exception:
                 util.logexc(
                     LOG,
-                    "Faild read json meta-data from %s "
+                    "Failed read json meta-data from %s "
                     "fall back directory tree style",
                     self.metadata_address,
                 )
